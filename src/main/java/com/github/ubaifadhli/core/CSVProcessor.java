@@ -170,6 +170,7 @@ public class CSVProcessor<T> {
 
             try {
                 csvFile.createNewFile();
+                csvFile.getParentFile().mkdirs();
 
             } catch (IOException ex) {
                 throw new RuntimeException("Unexpected error occured.");
