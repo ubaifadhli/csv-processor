@@ -12,6 +12,22 @@ public class ReflectionHelper {
                 .collect(Collectors.toList());
     }
 
+    public static Object getFieldValue(Object object, Field field) {
+        Object value;
+
+        try {
+            field.setAccessible(true);
+
+            value = field.get(object);
+
+            field.setAccessible(false);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Failed to get field value.");
+        }
+
+        return value;
+    }
+
     public static List<Field> getAnnotatedFields(Class<?> specifiedClass, Class<? extends Annotation> annotationClass) {
         return getFields(specifiedClass)
                 .stream()
@@ -20,8 +36,6 @@ public class ReflectionHelper {
     }
 
     public static Field getField(Class<?> specifiedClass, String fieldName) throws NoSuchFieldException {
-        Arrays.stream(specifiedClass.getFields()).forEach(System.out::println);
-
         return specifiedClass.getDeclaredField(fieldName);
     }
 

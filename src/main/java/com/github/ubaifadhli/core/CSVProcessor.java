@@ -8,10 +8,7 @@ import com.github.ubaifadhli.reflections.ReflectionHelper;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CSVProcessor<T> {
@@ -157,91 +154,105 @@ public class CSVProcessor<T> {
     public void writeToFile(List<T> datum) {
         List<HeaderDetail> headerDetails;
 
-        boolean addHeader = csvFile.isFile();
+        boolean fileAlreadyExists;
 
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(csvFile));
 
+            // Assumption : Header and data exist when file exists
+            String headerString = reader.lines().findFirst().get();
 
-        // Assumption : Header and data exist when file exists
-        if (csvFile.isFile()) {
-            try {
-                BufferedReader reader = new BufferedReader(new FileReader(csvFile));
-                String headerString = reader.lines().findFirst().get();
+            headerDetails = determineHeaderDetails(headerString);
 
-                headerDetails = determineHeaderDetails(headerString);
+            fileAlreadyExists = true;
 
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException("Unknown error occured");
-            }
+        } catch (FileNotFoundException e) {
 
-        } else {
             try {
                 csvFile.createNewFile();
 
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ex) {
+                throw new RuntimeException("Unexpected error occured.");
             }
 
             headerDetails = getDefaultHeaderDetails();
+
+            fileAlreadyExists = false;
         }
 
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(csvFile));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(csvFile, fileAlreadyExists));
 
-            boolean isFirstColumn = true;
+            if (!fileAlreadyExists) {
+                try {
+                    StringBuilder stringBuilder = new StringBuilder();
+
+                    // Adding first header separately because it doesn't need preceding delimiter.
+                    stringBuilder.append(headerDetails.get(0).getCsvName());
+
+                    for (int i = 1; i < headerDetails.size(); i++)
+                        stringBuilder
+                                .append(DEFAULT_DELIMITER)
+                                .append(headerDetails.get(i).getCsvName());
+
+
+                    writer.write(stringBuilder.toString());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            List<HeaderDetail> lambdaHeaderDetails = headerDetails;
 
             datum.forEach(data -> {
                 StringBuilder stringBuilder = new StringBuilder();
 
-                headerDetails.forEach(detail -> {
-                    if (isFirstColumn) {
+                try {
+                    writer.newLine();
+
+                    // Adding first column separately because it doesn't need preceding delimiter.
+                    stringBuilder.append(ReflectionHelper.getFieldValue(data, lambdaHeaderDetails.get(0).getField()));
+
+                    for (int i = 1; i < lambdaHeaderDetails.size(); i++) {
+                        HeaderDetail currentDetail = lambdaHeaderDetails.get(i);
+
                         stringBuilder.append(DEFAULT_DELIMITER);
-                        isFirstColumn = false;
+
+                        if (currentDetail.hasAnnotation() && currentDetail.getAnnotation().splitByCharacter() != DEFAULT_IGNORED_SPLIT_REGEX) {
+                            StringBuilder joinStringBuilder = new StringBuilder();
+                            char splitCharacter = currentDetail.getAnnotation().splitByCharacter();
+
+                            // TODO Make this work for other primitives
+                            Object value = ReflectionHelper.getFieldValue(data, currentDetail.getField());
+
+                            List<?> splitTexts = new ArrayList<>((Collection<?>) value);
+
+                            joinStringBuilder.append(splitTexts.get(0));
+
+                            splitTexts.remove(0);
+
+                            splitTexts.forEach(text ->
+                                    joinStringBuilder
+                                            .append(splitCharacter)
+                                            .append(text)
+                            );
+
+                            stringBuilder.append(joinStringBuilder);
+                        } else
+                            stringBuilder.append(ReflectionHelper.getFieldValue(data, currentDetail.getField()));
                     }
 
-                    try {
-                        stringBuilder.append(detail.getField().get(data))
-                                .append(DEFAULT_DELIMITER);
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
-                });
+                    writer.write(stringBuilder.toString());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
             });
+
+            writer.close();
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
-        try {
-            // Assumption : When file exists then Header and data also exist
-            if (csvFile.isFile()) {
-                if (headerDetails != null) {
-                    BufferedReader reader = new BufferedReader(new FileReader(csvFile));
-
-
-                } else {
-                    // Read
-                }
-
-                if (headerDetails.size() > 0) {
-                    headerDetails.forEach(headerDetail -> {
-
-                    });
-
-                } else {
-
-                }
-            }
-
-        } catch (FileNotFoundException e) {
-
-        }
-
-
-        // If has file && has header
-            // Fill according to header order
-
-        // If doesn't have file
-            // Fill according to class order
     }
 }
