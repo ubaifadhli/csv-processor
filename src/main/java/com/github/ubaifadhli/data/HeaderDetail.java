@@ -1,4 +1,4 @@
-package com.github.ubaifadhli.util;
+package com.github.ubaifadhli.data;
 
 import com.github.ubaifadhli.annotations.CSVColumn;
 import lombok.Builder;
@@ -9,7 +9,6 @@ import java.lang.reflect.Field;
 @Builder
 @Data
 public class HeaderDetail {
-    private Class<?> objectClass;
     private int index;
     private Field field;
     private String csvName;

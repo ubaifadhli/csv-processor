@@ -6,9 +6,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class FieldHelper {
+public class ReflectionHelper {
     public static List<Field> getFields(Class<?> specifiedClass) {
-        return Arrays.stream(specifiedClass.getFields())
+        return Arrays.stream(specifiedClass.getDeclaredFields())
                 .collect(Collectors.toList());
     }
 
