@@ -169,11 +169,11 @@ public class CSVProcessor<T> {
         } catch (FileNotFoundException e) {
 
             try {
-                csvFile.createNewFile();
                 csvFile.getParentFile().mkdirs();
+                csvFile.createNewFile();
 
             } catch (IOException ex) {
-                throw new RuntimeException("Unexpected error occured.");
+                throw new RuntimeException("Error occured when creating file.", ex);
             }
 
             headerDetails = getDefaultHeaderDetails();
