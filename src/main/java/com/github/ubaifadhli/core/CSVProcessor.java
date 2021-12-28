@@ -226,21 +226,23 @@ public class CSVProcessor<T> {
                             // TODO Make this work for other primitives
                             Object value = ReflectionHelper.getFieldValue(data, currentDetail.getField());
 
-                            List<?> splitTexts = new ArrayList<>((Collection<?>) value);
+                            if (value != null) {
+                                List<?> splitTexts = new ArrayList<>((Collection<?>) value);
 
-                            joinStringBuilder.append(splitTexts.get(0));
+                                joinStringBuilder.append(splitTexts.get(0));
 
-                            splitTexts.remove(0);
+                                splitTexts.remove(0);
 
-                            splitTexts.forEach(text ->
-                                    joinStringBuilder
-                                            .append(splitCharacter)
-                                            .append(text)
-                            );
+                                splitTexts.forEach(text ->
+                                        joinStringBuilder
+                                                .append(splitCharacter)
+                                                .append(text)
+                                );
+                            }
 
                             stringBuilder.append(joinStringBuilder);
                         } else
-                            stringBuilder.append(ReflectionHelper.getFieldValue(data, currentDetail.getField()));
+                            stringBuilder.append(ReflectionHelper.getFieldValue(data != null ? data : "", currentDetail.getField()));
                     }
 
                     writer.write(stringBuilder.toString());
